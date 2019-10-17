@@ -15,7 +15,7 @@ Defaults to false in the config, but it was useful in testing to make sure the r
 
 # Permissions
 1. autoreplant.debug.toggle - Allows the permission holder to toggle console debugging. Defaults to op.
-2. autoreplant.replant - Allows the permission holder to have their crops automatically replanted for them. Defaults to everyone.
+2. autoreplant.replant - Allows the permission holder to have their crops automatically replanted for them. Defaults to op.
 
 # TODO
 1. Add a check to see if the crop was fully grown before replanting. Currently the crops are replanted no matter what stage the crop is at.
