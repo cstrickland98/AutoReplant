@@ -1,0 +1,19 @@
+name: AutoReplant
+main: net.ddns.gamersanonymous.main
+version: 1.21
+api-version: 1.14
+
+commands:
+  ARDebugToggle:
+    description: Toggles console debugging on and off (How many seeds from what slot)
+    usage: /ARDebugToggle - Toggles debugging to console
+    permission: autoreplant.debug.toggle
+
+permissions:
+  autoreplant.debug.toggle:
+    description: Allows you to turn console debugging on and off
+    default: op
+
+  autoreplant.replant:
+    description: Allows the player to have their farms automatically replanted for them
+    default: op
