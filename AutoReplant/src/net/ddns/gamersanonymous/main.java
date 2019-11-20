@@ -25,11 +25,15 @@
 package net.ddns.gamersanonymous;
 
 import net.ddns.gamersanonymous.commands.CommandDebug;
+import net.ddns.gamersanonymous.commands.CommandFullyGrown;
+import net.ddns.gamersanonymous.commands.CommandPluginToggle;
 import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Material;
 import org.bukkit.block.Block;
+import org.bukkit.block.data.BlockData;
 import org.bukkit.configuration.file.FileConfiguration;
+import org.bukkit.block.data.Ageable;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Cancellable;
 import org.bukkit.event.EventHandler;
@@ -40,9 +44,10 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.scheduler.BukkitScheduler;
 
 /**
- * Author:     Shatou (Hardcore_CPS)
- * Date:       10/11/2019
- * MC Version: 1.14.4
+ * Author:            Shatou (Hardcore_CPS)
+ * Date:              10/11/2019
+ * MC Version:        1.14.4
+ * Comments updated : 10/15/2019
  *
  * This plugin listens for a block break event, if it is a crop (excluding melons and pumpkins) it will automatically replant with
  * the appropriate materials after a short delay.
@@ -66,7 +71,13 @@ public final class main extends JavaPlugin implements Listener, Cancellable
         getServer().getPluginManager().registerEvents(this,this);
 
         config.addDefault("debug", false);
+        config.addDefault("requireFullyGrown", true);
+        config.addDefault("enable", true);
+        config.options().copyDefaults(true);
+        saveConfig();
         this.getCommand("ARDebugToggle").setExecutor(new CommandDebug(config));
+        this.getCommand("ARFullGrowToggle").setExecutor(new CommandFullyGrown(config));
+        this.getCommand("ARToggle").setExecutor(new CommandPluginToggle(config));
     }
 
     /**
@@ -87,70 +98,86 @@ public final class main extends JavaPlugin implements Listener, Cancellable
     @EventHandler
     public void onPlantBreak(BlockBreakEvent blockBreakEvent)
     {
-        if(blockBreakEvent.getPlayer().hasPermission("autoreplant.replant"))
+        if(blockBreakEvent.getPlayer().hasPermission("autoreplant.replant") && config.getBoolean("enable"))
         {
             //Get our block
             Block block = blockBreakEvent.getBlock();
+            BlockData bdata = block.getBlockData();
             Material farm = blockBreakEvent.getBlock().getType();
 
             //If the block is a crop on a farm
-            if (farm == Material.WHEAT || farm == Material.BEETROOTS || farm == Material.CARROTS || farm == Material.POTATOES)
+            if (farm == Material.WHEAT || farm == Material.BEETROOTS || farm == Material.CARROTS || farm == Material.POTATOES || farm == Material.NETHER_WART)
             {
-
-                Location farmPos = block.getLocation(); //The position of the block in the world
-                String stringWorld = block.getWorld().getName(); //The name of the world
-                Player player = blockBreakEvent.getPlayer(); //The player breaking the block
-
-                //Switch to correctly set the materials we want to remove from a players inventory
-                switch (farm)
+                Ageable age = null;
+                if (bdata instanceof Ageable)
                 {
-                    case WHEAT:
-                        removeMat = Material.WHEAT_SEEDS; //The material to remove from the players inventory
-                        break;
-
-                    case BEETROOTS:
-                        removeMat = Material.BEETROOT_SEEDS; //The material to remove from the players inventory
-                        break;
-
-                    case CARROTS:
-                        removeMat = Material.CARROT; //The material to remove from the players inventory
-                        break;
-
-                    case POTATOES:
-                        removeMat = Material.POTATO; //The material to remove from the players inventory
-                        break;
+                    age = (Ageable) bdata;
                 }
-
-                //Schedules the seeds to be replanted the next tick
-                BukkitScheduler scheduler = Bukkit.getServer().getScheduler();
-                scheduler.scheduleSyncDelayedTask(this, new Runnable()
+                if (age.getAge() == age.getMaximumAge() || !config.getBoolean("requireFullyGrown"))
                 {
 
-                    @Override
-                    public void run()
-                    {
-                        //If the player has seeds and the blockbreakevent has not been cancelled
-                        if (player.getInventory().contains(removeMat) && !blockBreakEvent.isCancelled())
-                        {
-                            //Gets the block location from the world from the server and sets it to the crop
-                            //This just puts the crop down on a farm at state 0
-                            try
-                            {
-                                Bukkit.getServer().getWorld(stringWorld).getBlockAt(farmPos).setType(farm);
-                                //Remove an appropriate crop material from the player
-                                removeItem(player, removeMat);
-                            } catch (NullPointerException e)
-                            {
-                            }
-                        }
-                        //else if a player does not have any seeds in their inventory
-                        else if (!(player.getInventory().contains(removeMat)))
-                        {
-                            player.sendMessage("Not enough seeds in inventory!");
-                        }
+                    Location farmPos = block.getLocation(); //The position of the block in the world
+                    String stringWorld = block.getWorld().getName(); //The name of the world
+                    Player player = blockBreakEvent.getPlayer(); //The player breaking the block
 
+                    //Switch to correctly set the materials we want to remove from a players inventory
+                    switch (farm)
+                    {
+                        case WHEAT:
+                            removeMat = Material.WHEAT_SEEDS; //The material to remove from the players inventory
+                            break;
+
+                        case BEETROOTS:
+                            removeMat = Material.BEETROOT_SEEDS; //The material to remove from the players inventory
+                            break;
+
+                        case CARROTS:
+                            removeMat = Material.CARROT; //The material to remove from the players inventory
+                            break;
+
+                        case POTATOES:
+                            removeMat = Material.POTATO; //The material to remove from the players inventory
+                            break;
+
+                        case NETHER_WART:
+                            removeMat = Material.NETHER_WART;
                     }
-                }, DELAY);
+
+                    //Schedules the seeds to be replanted the next tick
+                    BukkitScheduler scheduler = Bukkit.getServer().getScheduler();
+                    scheduler.scheduleSyncDelayedTask(this, new Runnable()
+                    {
+
+                        @Override
+                        public void run()
+                        {
+                            //If the player has seeds and the blockbreakevent has not been cancelled
+                            if (player.getInventory().contains(removeMat) && !blockBreakEvent.isCancelled())
+                            {
+                                //Gets the block location from the world from the server and sets it to the crop
+                                //This just puts the crop down on a farm at state 0
+                                try
+                                {
+                                    Bukkit.getServer().getWorld(stringWorld).getBlockAt(farmPos).setType(farm);
+                                    //Remove an appropriate crop material from the player
+                                    removeItem(player, removeMat);
+                                } catch (NullPointerException e)
+                                {
+                                }
+                            }
+                            //else if a player does not have any seeds in their inventory
+                            else if (!(player.getInventory().contains(removeMat)))
+                            {
+                                player.sendMessage("Not enough seeds in inventory!");
+                            }
+
+                        }
+                    }, DELAY);
+                }
+                else
+                {
+                    blockBreakEvent.getPlayer().sendMessage("AutoReplant only works on fully grown blocks!");
+                }
             }
         }
     }

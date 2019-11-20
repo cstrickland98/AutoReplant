@@ -1,12 +1,23 @@
 name: AutoReplant
 main: net.ddns.gamersanonymous.main
-version: 1.2
+version: 1.23
 api-version: 1.14
 
 commands:
   ARDebugToggle:
     description: Toggles console debugging on and off (How many seeds from what slot)
-    usage: /debugToggle - Toggles debugging to console
+    usage: /ARDebugToggle - Toggles debugging to console
+    permission: autoreplant.debug.toggle
+
+  ARFullGrowToggle:
+    description: Toggles the fully grown requirement when breaking crops
+    usage: /ARFullGrowToggle - Toggle autoreplant between fully grown crops and any stage crops
+    permission: autoreplant.fullygrown.toggle
+
+  ARToggle:
+    description: Toggles autoreplanting on and off
+    usage: /ARToggle - Toggle replanting on and off
+    permission: autoreplant.toggle
 
 permissions:
   autoreplant.debug.toggle:
@@ -15,4 +26,12 @@ permissions:
 
   autoreplant.replant:
     description: Allows the player to have their farms automatically replanted for them
-    default: true
+    default: op
+
+  autoreplant.fullygrown.toggle:
+    description: Allows you to turn the fully grown requirements on and off
+    default: op
+
+  autoreplant.toggle:
+    description: Allows you to toggle the plugin on and off
+    default: op
